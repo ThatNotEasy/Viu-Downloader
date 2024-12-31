@@ -139,7 +139,7 @@ def get_product_series_id(url):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     }
 
-    response = requests.get('https://www.viu.com/ott/my/ms/vod/2441213/Running-Man-2024', cookies=cookies, headers=headers)
+    response = requests.get(url, cookies=cookies, headers=headers)
     if response.status_code == 200:
         series_pattern = r'"series_id":\s*"(\d+)",\s*"series_name":\s*"(.*?)",\s*"product_id":\s*"(\d+)"'
         series_match = re.search(series_pattern, response.text)
