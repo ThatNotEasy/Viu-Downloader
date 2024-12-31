@@ -21,3 +21,6 @@ A Python-based tool for downloading content from the **VIU platform**, complete 
 ### Install Python Dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+- ![image](https://github.com/user-attachments/assets/3a595aea-176c-4d13-a06d-1d4ad14449d2)
