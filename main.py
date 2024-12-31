@@ -6,6 +6,7 @@ from modules.viu import (
     get_manifest,
     RED, YELLOW, GREEN, RESET, CYAN, WHITE
 )
+from modules.config import prompt_and_save_token
 from modules.logging import setup_logging
 from modules.banners import banners
 from modules.downloader import download_file, find_and_merge_files, download_hls, cleanup_logs_dir, ensure_logs_directory, logs_dir
@@ -36,8 +37,8 @@ def choose_subtitle_and_download(subtitles):
     return None
 
 
-def choose_resolution_and_download(ccs_product_id, series_name):
-    resolutions = get_manifest(ccs_product_id)
+def choose_resolution_and_download(token, ccs_product_id, series_name):
+    resolutions = get_manifest(ccs_product_id, token)
     if isinstance(resolutions, str):
         output_file = os.path.join(logs_dir, f"{series_name.replace(' ', '_')}.m3u8")
         download_file(resolutions, output_file)
@@ -70,34 +71,31 @@ def choose_resolution_and_download(ccs_product_id, series_name):
 if __name__ == '__main__':
     banners()
     ensure_logs_directory()
-
-    product_series_data = get_product_series_id()
-    product_id = input(f"{YELLOW}Enter PRODUCT ID: {RESET}")
-    series_id = input(f"{YELLOW}Enter SERIES ID: {RESET}")
-
-    product_series = next(
-        (ps for ps in product_series_data if ps["product_id"] == product_id and ps["series_id"] == series_id),
-        None
-    )
-
-    if not product_series:
-        print(f"{RED}[ERROR]{RESET} Invalid PRODUCT ID or SERIES ID.")
+    
+    token = prompt_and_save_token()
+    if not token:
+        print(f"{RED}[ERROR]{RESET} No token provided. Exiting.")
         exit(1)
 
-    series_name = product_series["series_name"].replace(' ', '_')
-    banners()
-    print(f"{GREEN}[INFO]{RESET} Series Name: {CYAN}{series_name}{RESET}\n")
+    url = input(f"{YELLOW}Enter VIU URL: {RESET}")
+    try:
+        product_id, series_id, series_name = get_product_series_id(url)
+        print(f"{GREEN}[INFO]{RESET} Series Name: {CYAN}{series_name}{RESET}\n")
+    except ValueError as e:
+        print(f"{RED}[ERROR]{RESET} {str(e)}")
+        exit(1)
 
-    subtitles = get_subtitle(product_id)
+    subtitles = get_subtitle(product_id, token)
     if subtitles:
-        subtitle_file = choose_subtitle_and_download(subtitles)
+        banners()
+        choose_subtitle_and_download(subtitles)
 
-    ccs_product_id = get_ccs_product_id(series_id)
+    ccs_product_id = get_ccs_product_id(series_id, token)
     if not ccs_product_id:
         print(f"{RED}[ERROR]{RESET} No CCS Product ID found.")
         exit(1)
 
-    m3u8_file = choose_resolution_and_download(ccs_product_id, series_name)
+    m3u8_file = choose_resolution_and_download(token, ccs_product_id, series_name)
     if not m3u8_file:
         print(f"{RED}[ERROR]{RESET} No valid resolution found for download.")
         exit(1)
@@ -106,7 +104,5 @@ if __name__ == '__main__':
     if downloaded_file:
         find_and_merge_files()
         print(f"{GREEN}[SUCCESS]{RESET} Video processing complete.")
-        cleanup_logs_dir()
     else:
         print(f"{RED}[ERROR]{RESET} Video download failed.")
-        cleanup_logs_dir()
