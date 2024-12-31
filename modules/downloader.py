@@ -41,17 +41,9 @@ def download_file(url, output_file):
         print(f"{YELLOW}[VIU-DOWNLOADER]{RED}: {WHITE}{output_file} {RED}| DOWNLOAD FAILED {RESET}")
 
 def download_hls(m3u8_url, output_file):
-    """
-    Download video from an HLS stream using N_m3u8DL-RE.
+    print(f"{YELLOW}[VIU-DOWNLOADER]{RED}: {WHITE}{m3u8_url}{RESET}\n")
 
-    Args:
-        m3u8_url (str): URL of the HLS playlist.
-        output_file (str): Desired base name for the downloaded video (without extension).
-    """
-    print(f"{YELLOW}[VIU-DOWNLOADER]{RED}: {WHITE}{m3u8_url} {RED}| {GREEN}. {RESET}\n")
-    base_filename = os.path.basename(output_file)  # Get the base filename
-
-    command = f'N_m3u8DL-RE.exe "{m3u8_url}" --save-name "{base_filename}" --save-dir "{logs_dir}" --thread-count 3 -mt -M format=mp4 --select-video "BEST" --select-audio "BEST"'
+    command = f'N_m3u8DL-RE.exe "{m3u8_url}" --save-name "{output_file}" --save-dir "{logs_dir}" --thread-count 3 -mt -M format=mp4 --select-video "BEST" --select-audio "BEST"'
     try:
         exit_code = os.system(command)
         if exit_code == 0:
