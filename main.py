@@ -8,6 +8,7 @@ from modules.downloader import download_file, find_and_merge_files, download_hls
 logging = setup_logging()
 viu = VIU()
 
+
 def choose_subtitle_and_download(subtitles):
     if not subtitles:
         print(f"{RED}[ERROR]{RESET} No subtitles available to choose from.")
@@ -73,33 +74,85 @@ if __name__ == '__main__':
         print(f"{RED}[ERROR]{RESET} No token provided. Exiting.")
         exit(1)
 
-    url = input(f"{YELLOW}Enter VIU URL: {RESET}")
-    time.sleep(1)
-    banners()
-    try:
-        product_id, series_id, series_name = viu.get_product_series_id(url)
-        print(f"{GREEN}[INFO]{RESET} Series Name: {CYAN}{series_name}{RESET}\n")
-    except ValueError as e:
-        print(f"{RED}[ERROR]{RESET} {str(e)}")
-        exit(1)
+    print(f"{YELLOW}Choose option:{RESET}")
+    print(f"{GREEN}1. VOD{RESET}")
+    print(f"{CYAN}2. Series{RESET}")
+    option = input(f"{YELLOW}Enter your choice (1 or 2): {WHITE}{RESET}")
 
-    subtitles = viu.get_subtitle(product_id)
-    if subtitles:
-        choose_subtitle_and_download(subtitles)
+    if option == "1":
+        # VOD option - proceed with original flow
+        url = input(f"{YELLOW}Enter VIU URL: {RESET}")
+        time.sleep(1)
+        banners()
+        try:
+            product_id, series_id, series_name = viu.get_product_series_id(url)
+            print(f"{GREEN}[INFO]{RESET} Series Name: {CYAN}{series_name}{RESET}\n")
+        except ValueError as e:
+            print(f"{RED}[ERROR]{RESET} {str(e)}")
+            exit(1)
 
-    ccs_product_id = viu.get_ccs_product_id(series_id)
-    if not ccs_product_id:
-        print(f"{RED}[ERROR]{RESET} No CCS Product ID found.")
-        exit(1)
+        subtitles = viu.get_subtitle(product_id)
+        if subtitles:
+            choose_subtitle_and_download(subtitles)
 
-    m3u8_file = choose_resolution_and_download(ccs_product_id, series_name)
-    if not m3u8_file:
-        print(f"{RED}[ERROR]{RESET} No valid resolution found for download.")
-        exit(1)
+        ccs_product_id = viu.get_ccs_product_id(series_id)
+        if not ccs_product_id:
+            print(f"{RED}[ERROR]{RESET} No CCS Product ID found.")
+            exit(1)
 
-    downloaded_file = download_hls(m3u8_file, series_name)
-    if downloaded_file:
-        find_and_merge_files()
-        print(f"{GREEN}[SUCCESS]{RESET} Video processing complete.")
-    else:
-        print(f"{RED}[ERROR]{RESET} Video download failed.")
+        m3u8_file = choose_resolution_and_download(ccs_product_id, series_name)
+        if not m3u8_file:
+            print(f"{RED}[ERROR]{RESET} No valid resolution found for download.")
+            exit(1)
+
+        downloaded_file = download_hls(m3u8_file, series_name)
+        if downloaded_file:
+            find_and_merge_files()
+            print(f"{GREEN}[SUCCESS]{RESET} Video processing complete.")
+        else:
+            print(f"{RED}[ERROR]{RESET} Video download failed.")
+
+    elif option == "2":
+        # Series option - extract product ID from URL and use get_series
+        url = input(f"{YELLOW}Enter VIU Series URL: {RESET}")
+        product_id = viu.extract_product_id(url)
+        if not product_id:
+            print(f"{RED}[ERROR]{RESET} Could not extract product ID from URL.")
+            exit(1)
+        
+        print(f"{GREEN}[INFO]{RESET} Extracted Product ID: {CYAN}{product_id}{RESET}")
+        
+        # Get series information using the get_series method
+        try:
+            series_info = viu.get_series(product_id)
+            series_id = series_info["series_id"]
+            ccs_product_id = series_info["ccs_product_id"]
+            series_name = series_info["series_name"] or input(f"{YELLOW}Enter series name (for filename): {RESET}").strip()
+            
+            print(f"{GREEN}[INFO]{RESET} Series ID: {CYAN}{series_id}{RESET}")
+            print(f"{GREEN}[INFO]{RESET} CCS Product ID: {CYAN}{ccs_product_id}{RESET}")
+            
+            # Continue with the download process
+            subtitles = viu.get_subtitle(product_id)
+            if subtitles:
+                choose_subtitle_and_download(subtitles)
+
+            if not ccs_product_id:
+                print(f"{RED}[ERROR]{RESET} No CCS Product ID found.")
+                exit(1)
+
+            m3u8_file = choose_resolution_and_download(ccs_product_id, series_name)
+            if not m3u8_file:
+                print(f"{RED}[ERROR]{RESET} No valid resolution found for download.")
+                exit(1)
+
+            downloaded_file = download_hls(m3u8_file, series_name)
+            if downloaded_file:
+                find_and_merge_files()
+                print(f"{GREEN}[SUCCESS]{RESET} Video processing complete.")
+            else:
+                print(f"{RED}[ERROR]{RESET} Video download failed.")
+                
+        except Exception as e:
+            print(f"{RED}[ERROR]{RESET} Failed to get series information: {str(e)}")
+            exit(1)
