@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 from modules.banners import banners
-from modules.viu import RED, CYAN, YELLOW, GREEN, WHITE, RESET
+from colorama import Fore
 import os
 
 CONFIG = "config.ini"
@@ -15,12 +15,12 @@ def setup_config():
 def prompt_and_save_token():
     config = setup_config()
     if config.has_section('VIU') and 'TOKEN' in config['VIU']:
-        print(f"{GREEN}[INFO]{RESET} Token already exists in config.ini.")
+        print(f"{Fore.GREEN}[INFO]{Fore.RESET} Token already exists in config.ini\n")
         return config['VIU']['TOKEN']
 
-    token = input(f"\n{YELLOW}[VIU-DOWNLOADER] {WHITE}Enter Authorization Bearer Token: {RESET}").strip()
+    token = input(f"\n{Fore.YELLOW}[VIU-DOWNLOADER] {Fore.WHITE}Enter Authorization Bearer Token: {Fore.RESET}").strip()
     if not token:
-        print(f"{RED}[ERROR]{RESET} No token provided. Exiting.")
+        print(f"{Fore.RED}[ERROR]{Fore.RESET} No token provided. Exiting.")
         exit(1)
 
     config['VIU'] = {'TOKEN': token}
@@ -28,5 +28,5 @@ def prompt_and_save_token():
         config.write(configfile)
 
     banners()
-    print(f"{YELLOW}[VIU-DOWNLOADER]{RED}: {GREEN}Token saved to {CYAN}config.ini{RESET}\n")
+    print(f"{Fore.YELLOW}[VIU-DOWNLOADER]{Fore.RED}: {Fore.GREEN}Token saved to {Fore.CYAN}config.ini{Fore.RESET}\n")
     return token
