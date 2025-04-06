@@ -121,3 +121,17 @@ def merge_video_and_subtitle(video_file, subtitle_file, output_file):
         print(f"{GREEN}[SUCCESS]{RESET} Video and subtitle merged successfully: {output_file}")
     except subprocess.CalledProcessError as e:
         print(f"{RED}[ERROR]{RESET} Error during merging: {e.stderr.decode('utf-8')}")
+        
+
+def create_m3u_playlist(content_name, manifest_url, append=False):
+    playlist_path = "viu.m3u"
+    mode = "a" if append else "w"
+    with open(playlist_path, mode, encoding="utf-8") as f:
+        if not append:
+            f.write("#EXTM3U\n\n")
+
+        f.write(f'#EXTINF:-1, group-title="VIU", {content_name}\n')
+        f.write(f"{manifest_url}\n\n")
+
+    return playlist_path
+    
