@@ -21,6 +21,7 @@ class VIU:
         self.token = self.config["VIU"]["TOKEN"]
         self.session = requests.Session()
         self.cookies_file = "cookies.txt"
+        self.product_id = None
         
         # Initialize headers properly
         self.headers = {
@@ -158,6 +159,31 @@ class VIU:
             print(f"{RED}Error in get_ccs_product_id: {e}{RESET}")
             return []
 
+    def get_series(self, product_id):
+        params = {
+            'platform_flag_label': 'web',
+            'area_id': '1001',
+            'language_flag_id': '3',
+            'platformFlagLabel': 'web',
+            'areaId': '1001',
+            'languageFlagId': '3',
+            'countryCode': 'MY',
+            'ut': '2',
+            'r': '/vod/detail',
+            'product_id': product_id,
+            'os_flag_id': '1',
+        }
+        headers = self.headers.copy()
+        headers["authorization"] = f"Bearer {self.token}"
+        response = self.session.get('https://api-gateway-global.viu.com/api/mobile', params=params, headers=headers)
+        data = response.json()["data"]["current_product"]
+        return {
+            "series_id": data["ccs_product_id"],
+            "series_name": data.get("name", ""),
+            "ccs_product_id": data["ccs_product_id"]  # For single episode downloads
+        }
+    
+    
     def get_manifest(self, ccs_product_id):
         """Get streaming manifests for a CCS product"""
         url = "https://api-gateway-global.viu.com/api/playback/distribute"
@@ -211,3 +237,11 @@ class VIU:
         except Exception as e:
             print(f"{RED}Error in get_manifest: {e}{RESET}")
             return None
+        
+    def extract_product_id(self, url):
+        # Pattern to match URLs like https://www.viu.com/ott/my/en/vod/2577395/Bidaah
+        pattern = r'viu\.com/.*?/vod/(\d+)'
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+        return None
