@@ -1,17 +1,12 @@
-import os
-from modules.viu import (
-    get_product_series_id,
-    get_subtitle,
-    get_ccs_product_id,
-    get_manifest,
-    RED, YELLOW, GREEN, RESET, CYAN, WHITE
-)
+import os, time
+from modules.viu import VIU, RED, YELLOW, GREEN, RESET, CYAN, WHITE
 from modules.config import prompt_and_save_token
 from modules.logging import setup_logging
 from modules.banners import banners
-from modules.downloader import download_file, find_and_merge_files, download_hls, cleanup_logs_dir, ensure_logs_directory, logs_dir
+from modules.downloader import download_file, find_and_merge_files, download_hls, cleanup_logs_dir, ensure_logs_directory, logs_dir, create_m3u_playlist
 
 logging = setup_logging()
+viu = VIU()
 
 def choose_subtitle_and_download(subtitles):
     if not subtitles:
@@ -37,8 +32,9 @@ def choose_subtitle_and_download(subtitles):
     return None
 
 
-def choose_resolution_and_download(token, ccs_product_id, series_name):
-    resolutions = get_manifest(ccs_product_id, token)
+def choose_resolution_and_download(ccs_product_id, series_name):
+    resolutions = viu.get_manifest(ccs_product_id)
+    create_m3u_playlist(series_name, resolutions, append=True)
     if isinstance(resolutions, str):
         output_file = os.path.join(logs_dir, f"{series_name.replace(' ', '_')}.m3u8")
         download_file(resolutions, output_file)
@@ -78,24 +74,25 @@ if __name__ == '__main__':
         exit(1)
 
     url = input(f"{YELLOW}Enter VIU URL: {RESET}")
+    time.sleep(1)
+    banners()
     try:
-        product_id, series_id, series_name = get_product_series_id(url)
+        product_id, series_id, series_name = viu.get_product_series_id(url)
         print(f"{GREEN}[INFO]{RESET} Series Name: {CYAN}{series_name}{RESET}\n")
     except ValueError as e:
         print(f"{RED}[ERROR]{RESET} {str(e)}")
         exit(1)
 
-    subtitles = get_subtitle(product_id, token)
+    subtitles = viu.get_subtitle(product_id)
     if subtitles:
-        banners()
         choose_subtitle_and_download(subtitles)
 
-    ccs_product_id = get_ccs_product_id(series_id, token)
+    ccs_product_id = viu.get_ccs_product_id(series_id)
     if not ccs_product_id:
         print(f"{RED}[ERROR]{RESET} No CCS Product ID found.")
         exit(1)
 
-    m3u8_file = choose_resolution_and_download(token, ccs_product_id, series_name)
+    m3u8_file = choose_resolution_and_download(ccs_product_id, series_name)
     if not m3u8_file:
         print(f"{RED}[ERROR]{RESET} No valid resolution found for download.")
         exit(1)
